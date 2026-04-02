@@ -8,6 +8,8 @@ echo "::debug:: ENV_FILE: $ENV_FILE"
 # shellcheck source=../../.env
 source "$ENV_FILE"
 
+echo "TOKEN: $TOKEN"
+
 git config --global user.name "$GIT_USER"
 git config --global user.email "$GIT_EMAIL"
 git config --global --add safe.directory "*"
