@@ -15,6 +15,12 @@ echo "::debug:: NEW_MINOR_VERSION: $NEW_MINOR_VERSION"
 # shellcheck source=../../.env
 source "$ENV_FILE"
 
+# Ensure the token is set
+if [ -z "$TOKEN" ]; then
+  echo "::error::TOKEN is not set!"
+  exit 1
+fi
+
 repositories=$(echo "$RELEASE_REPOSITORIES" | tr -d '[:space:]')
 
 for value in ${repositories//,/ }
@@ -39,6 +45,12 @@ do
     git commit -m "Adapted version to $NEW_MINOR_VERSION" || true
     status=$(git status 2>&1)
     echo "::debug::Git status: $status"
+
+    # Debug: Show the push URL (mask token)
+    echo "::debug::Pushing to: https://x-access-token:[MASKED]@github.com/$value.git"
+
+    git remote -v
+    git config --list
     git push $(if $DRY_RUN; then echo "--dry-run"; fi) https://x-access-token:$TOKEN@github.com/$value.git
     echo "::debug::Pushed pom version update"
   fi
