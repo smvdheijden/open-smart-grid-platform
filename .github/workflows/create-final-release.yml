@@ -43,8 +43,8 @@ jobs:
         if: success()
         uses: actions/create-github-app-token@v3.0.0
         with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.OSGP_CI_APP_ID }}
+          private-key: ${{ secrets.OSGP_CI_APP_PRIVATE_KEY }}
 
       - name: "Checkout current repo for env file"
         if: success()
