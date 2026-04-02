@@ -21,12 +21,22 @@ for value in ${repositories//,/ }
 do
   if [[ ! $value =~ "b:" ]]; then
     cd "$HOME_DIR/$(echo "$value" | tr -d /)" || return
-    echo "::notice:: pushing release branch $release_branch"
-    echo "::debug:: in $HOME_DIR/$(echo "$value" | tr -d /)"
+    echo "::notice::pushing release branch $release_branch"
+    echo "::debug::in $HOME_DIR/$(echo "$value" | tr -d /)"
+
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    echo "::debug:: current branch: $current_branch"
+
+    git checkout -f $release_branch
+    echo "::debug::switched to branch: $release_branch"
 
     status=$(git status 2>&1)
-    echo "::debug:: $status"
-    git push "$(if $DRY_RUN; then echo "--dry-run"; fi)"
+    echo "::debug:: git status: $status"
+#    git push "$(if $DRY_RUN; then echo "--dry-run"; fi)"
     git push --set-upstream "$(if $DRY_RUN; then echo "--dry-run"; fi)" origin "$release_branch"
+    echo "::debug:: pushed release branch: $release_branch"
+
+    git checkout $current_branch
+    echo "::debug:: switched back to branch: $current_branch"
   fi
 done

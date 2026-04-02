@@ -37,6 +37,8 @@ do
 
     git commit -m "Adapted version to $NEW_MINOR_VERSION" || true
     status=$(git status 2>&1)
-    echo "::debug::$status"
+    echo "::debug::Git status: $status"
+    git push $(if ${{ github.event.inputs.dry_run }}; then echo "--dry-run"; fi)
+    echo "::debug::Pushed pom version update"
   fi
 done
