@@ -4,6 +4,7 @@ ENV_FILE=$1
 HOME_DIR=$2
 RELEASE_VERSION=$3
 NEW_MINOR_VERSION=$4
+DRY_RUN=$5
 
 echo "::debug:: Executing increment-pom-version.sh with parameters:"
 echo "::debug:: ENV_FILE: $ENV_FILE"
@@ -38,7 +39,7 @@ do
     git commit -m "Adapted version to $NEW_MINOR_VERSION" || true
     status=$(git status 2>&1)
     echo "::debug::Git status: $status"
-    git push $(if ${{ github.event.inputs.dry_run }}; then echo "--dry-run"; fi)
+    git push $(if $DRY_RUN; then echo "--dry-run"; fi)
     echo "::debug::Pushed pom version update"
   fi
 done

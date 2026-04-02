@@ -92,7 +92,8 @@ jobs:
             $ENV_FILE \
             "${{ steps.checkout.outputs.repo_dir }}"  \
             "${{ github.event.inputs.release_version }}" \
-            "${{ steps.minor_version.outputs.new }}"
+            "${{ steps.minor_version.outputs.new }}" \
+            "${{ github.event.inputs.dry_run }}"
 
       - name: "Push release branches"
         if: success()
