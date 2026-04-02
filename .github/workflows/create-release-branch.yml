@@ -76,6 +76,7 @@ jobs:
         run: |
           bash ./.github/workflows/scripts/release/update-minor-version.sh \
             "${{ github.event.inputs.release_version }}"
+        
 
       - name: "Create release branches"
         if: success()
@@ -94,6 +95,8 @@ jobs:
             "${{ github.event.inputs.release_version }}" \
             "${{ steps.minor_version.outputs.new }}" \
             "${{ github.event.inputs.dry_run }}"
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: "Push release branches"
         if: success()

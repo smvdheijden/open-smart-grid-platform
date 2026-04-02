@@ -39,7 +39,7 @@ do
     git commit -m "Adapted version to $NEW_MINOR_VERSION" || true
     status=$(git status 2>&1)
     echo "::debug::Git status: $status"
-    git push $(if $DRY_RUN; then echo "--dry-run"; fi)
+    git push $(if $DRY_RUN; then echo "--dry-run"; fi) https://x-access-token:$TOKEN@github.com/$value.git
     echo "::debug::Pushed pom version update"
   fi
 done
