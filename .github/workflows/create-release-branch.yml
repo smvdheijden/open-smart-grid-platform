@@ -33,6 +33,7 @@ jobs:
         with:
           app-id: ${{ secrets.OSGP_CI_APP_ID }}
           private-key: ${{ secrets.OSGP_CI_APP_PRIVATE_KEY }}
+          permission-contents: true
 
       - name: "Checkout current repo for env file"
         if: success()
