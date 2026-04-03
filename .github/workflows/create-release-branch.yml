@@ -100,7 +100,7 @@ jobs:
           TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: "Push release branches"
-        if: false
+        if: success()
         run: |
           bash ./.github/workflows/scripts/common/push-release-branches.sh \
             $ENV_FILE \
