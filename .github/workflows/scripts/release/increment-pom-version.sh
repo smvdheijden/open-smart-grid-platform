@@ -97,11 +97,26 @@ do
 
     git remote -v
     git config --list | head -20
+
+    # Temporarily disable URL rewrite that might interfere with token authentication
+    original_insteadof=$(git config --get url."https://github.com/".insteadOf 2>/dev/null || echo "")
+    if [ -n "$original_insteadof" ]; then
+      echo "::debug::Temporarily removing URL rewrite rule: $original_insteadof -> https://github.com/"
+      git config --unset url."https://github.com/".insteadOf
+    fi
+
     if [ "$DRY_RUN" = "true" ]; then
       git push --dry-run "https://x-access-token:$TOKEN@github.com/$value.git"
     else
       git push "https://x-access-token:$TOKEN@github.com/$value.git"
     fi
+
+    # Restore URL rewrite rule if it existed
+    if [ -n "$original_insteadof" ]; then
+      echo "::debug::Restoring URL rewrite rule: $original_insteadof -> https://github.com/"
+      git config url."https://github.com/".insteadOf "$original_insteadof"
+    fi
+
     echo "::debug::Pushed pom version update"
   fi
 done
