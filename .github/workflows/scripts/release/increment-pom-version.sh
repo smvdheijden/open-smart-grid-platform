@@ -105,11 +105,21 @@ do
       git config --unset url."https://github.com/".insteadOf
     fi
 
+    # Store original remote URL and temporarily update it with token
+    original_remote_url=$(git config --get remote.origin.url)
+    echo "::debug::Original remote URL: $original_remote_url"
+    git remote set-url origin "https://x-access-token:$TOKEN@github.com/$value.git"
+    echo "::debug::Temporarily updated remote URL to use token"
+
     if [ "$DRY_RUN" = "true" ]; then
-      git push --dry-run "https://x-access-token:$TOKEN@github.com/$value.git"
+      git push --dry-run origin
     else
-      git push "https://x-access-token:$TOKEN@github.com/$value.git"
+      git push origin
     fi
+
+    # Restore original remote URL
+    git remote set-url origin "$original_remote_url"
+    echo "::debug::Restored original remote URL"
 
     # Restore URL rewrite rule if it existed
     if [ -n "$original_insteadof" ]; then
