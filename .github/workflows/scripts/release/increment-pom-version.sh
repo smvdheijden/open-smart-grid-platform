@@ -11,15 +11,33 @@ echo "::debug:: ENV_FILE: $ENV_FILE"
 echo "::debug:: HOME_DIR: $HOME_DIR"
 echo "::debug:: RELEASE_VERSION: $RELEASE_VERSION"
 echo "::debug:: NEW_MINOR_VERSION: $NEW_MINOR_VERSION"
+echo "::debug:: DRY_RUN: $DRY_RUN"
 
 # shellcheck source=../../.env
 source "$ENV_FILE"
 
-# Ensure the token is set
+# Comprehensive token validation
 if [ -z "$TOKEN" ]; then
-  echo "::error::TOKEN is not set!"
+  echo "::error::TOKEN is not set or empty!"
+  echo "::debug::Available environment variables:"
+  printenv | grep -E "(TOKEN|GITHUB)" | sed 's/=.*/=***/' || echo "No TOKEN-related vars found"
   exit 1
 fi
+
+echo "::debug::TOKEN is set (length: ${#TOKEN})"
+
+# Test GitHub API access
+echo "::debug::Testing GitHub API access..."
+api_response=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/vnd.github+json" https://api.github.com/installation/repositories)
+
+if [ "$api_response" != "200" ]; then
+  echo "::error::GitHub API authentication failed (HTTP $api_response)"
+  echo "::debug::This indicates the token is invalid, expired, or lacks API access"
+  exit 1
+fi
+
+echo "::debug::GitHub API authentication successful"
 
 repositories=$(echo "$RELEASE_REPOSITORIES" | tr -d '[:space:]')
 
@@ -46,12 +64,44 @@ do
     status=$(git status 2>&1)
     echo "::debug::Git status: $status"
 
+    # Test repository access before pushing
+    echo "::debug::Testing repository access for: $value"
+    repo_response=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" \
+      -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$value")
+
+    if [ "$repo_response" = "200" ]; then
+      echo "::debug::✅ API access to repository $value confirmed"
+    elif [ "$repo_response" = "404" ]; then
+      echo "::error::❌ Repository $value not found or token lacks access"
+      exit 1
+    elif [ "$repo_response" = "403" ]; then
+      echo "::error::❌ Token lacks permission for repository $value"
+      echo "::debug::Check if the GitHub App is installed on $value with Contents: Write permission"
+      exit 1
+    else
+      echo "::warning::Unexpected API response for $value (HTTP $repo_response)"
+    fi
+
+    # Test git remote access
+    echo "::debug::Testing git remote access..."
+    if git ls-remote "https://x-access-token:$TOKEN@github.com/$value.git" HEAD >/dev/null 2>&1; then
+      echo "::debug::✅ Git remote access confirmed for $value"
+    else
+      echo "::error::❌ Git remote access failed for $value"
+      echo "::debug::This usually indicates the GitHub App lacks Contents permission"
+      exit 1
+    fi
+
     # Debug: Show the push URL (mask token)
     echo "::debug::Pushing to: https://x-access-token:[MASKED]@github.com/$value.git"
 
     git remote -v
-    git config --list
-    git push $(if $DRY_RUN; then echo "--dry-run"; fi) https://x-access-token:$TOKEN@github.com/$value.git
+    git config --list | head -20
+    if [ "$DRY_RUN" = "true" ]; then
+      git push --dry-run "https://x-access-token:$TOKEN@github.com/$value.git"
+    else
+      git push "https://x-access-token:$TOKEN@github.com/$value.git"
+    fi
     echo "::debug::Pushed pom version update"
   fi
 done

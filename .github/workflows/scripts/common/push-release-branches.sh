@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 ENV_FILE=$1
@@ -30,11 +31,36 @@ do
     git checkout -f $release_branch
     echo "::debug::switched to branch: $release_branch"
 
+    # Test repository access if token is available
+    if [ -n "$TOKEN" ]; then
+      echo "::debug::Testing repository access for: $value"
+      repo_response=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" \
+        -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$value")
+
+      if [ "$repo_response" = "200" ]; then
+        echo "::debug::✅ API access to repository $value confirmed"
+      elif [ "$repo_response" = "404" ]; then
+        echo "::error::❌ Repository $value not found or token lacks access"
+        exit 1
+      elif [ "$repo_response" = "403" ]; then
+        echo "::error::❌ Token lacks permission for repository $value"
+        echo "::debug::Check if the GitHub App is installed on $value with Contents: Write permission"
+        exit 1
+      else
+        echo "::warning::Unexpected API response for $value (HTTP $repo_response)"
+      fi
+    fi
+
     status=$(git status 2>&1)
     echo "::debug:: git status: $status"
-#    git push "$(if $DRY_RUN; then echo "--dry-run"; fi)"
-    git push --set-upstream "$(if $DRY_RUN; then echo "--dry-run"; fi)" origin "$release_branch"
-    echo "::debug:: pushed release branch: $release_branch"
+
+    if [ "$DRY_RUN" = "true" ]; then
+      git push --dry-run --set-upstream origin "$release_branch"
+      echo "::debug:: dry-run push completed for release branch: $release_branch"
+    else
+      git push --set-upstream origin "$release_branch"
+      echo "::debug:: pushed release branch: $release_branch"
+    fi
 
     git checkout $current_branch
     echo "::debug:: switched back to branch: $current_branch"
