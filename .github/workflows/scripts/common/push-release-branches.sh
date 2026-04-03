@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 ENV_FILE=$1
