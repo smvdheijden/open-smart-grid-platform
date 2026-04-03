@@ -94,13 +94,12 @@ jobs:
             $ENV_FILE \
             "${{ steps.checkout.outputs.repo_dir }}"  \
             "${{ github.event.inputs.release_version }}" \
-            "${{ steps.minor_version.outputs.new }}" \
-            "${{ github.event.inputs.dry_run }}"
+            "${{ steps.minor_version.outputs.new }}"
 
-      - name: "Push release branches"
+      - name: "Push changes"
         if: success()
         run: |
-          bash ./.github/workflows/scripts/common/push-release-branches.sh \
+          bash ./.github/workflows/scripts/release/push-changes.sh \
             $ENV_FILE \
             "${{ steps.checkout.outputs.repo_dir }}" \
             "${{ github.event.inputs.release_version }}" \
